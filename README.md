@@ -1,2 +1,9 @@
-# codecheck
-Online Judge Helper
+# Introduction
+
+现在写 Online Judge 本地调试很痛苦，每次都要复制粘贴 INPUT 内容，并查看输出，或者写成宏定义，自己打开 `input.txt` 文件，模拟读取，太累了，编码-修改-测试 这个工作流的核心内循环是工作流里最高频的操作，任何一个环节能提升一点都会是非常大的效率提升。
+
+所以我编写了这个命令行工具，它能此扫描并提取 C/C++/Python/Pascal 源文件注释中的测试指令 （`@input`、`@output`、`@args`、`@timeout`），编译（C/C++/Pascal）或直接运行（Python）源代码，将 `@input` 作为标准输入传入，并将实际输出与 `@output` 预期值进行比对，实现源代码注释中的嵌入式自动化单元测试。
+
+关键想法是：测试数据随源代码，不用每次 COPY/PASTE 测试数据，也不用额外打开编辑 `input.txt` 之类的文件，数据就是代码一部分。
+
+## Quick Start
