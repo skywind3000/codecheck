@@ -1,10 +1,26 @@
-# Introduction
+# CodeCheck — 注释驱动的本地单元测试工具
 
-现在写 Online Judge 本地调试很痛苦，每次都要复制粘贴 INPUT 内容，并查看输出，或者写成宏定义，自己打开 `input.txt` 文件，模拟读取，太累了，“**编码-修改-测试**” 这个工作流的核心内循环是工作流里最高频的操作，任何一个环节能提升一点都会是非常大的效率提升。
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Languages](https://img.shields.io/badge/Supports-C%20%7C%20C++%20%7C%20Python-orange)
 
-所以我编写了这个注释驱动测试工具，它能此扫描并提取 C/C++/Python/Pascal 源文件注释中的测试指令 （`@input`、`@output`、`@args`、`@timeout`），编译（C/C++/Pascal）或直接运行（Python）源代码，将 `@input` 作为标准输入传入，并将实际输出与 `@output` 预期值进行比对，实现源代码注释中的嵌入式自动化单元测试。
+> 测试数据随代码，告别反复复制粘贴
 
-本项目纯手工打造，可以配置到 Dev-C++ 里一键运行，关键想法是：测试数据随源代码，不用每次 Copy/Paste 测试数据，也不用额外打开编辑 `input.txt` 之类的文件，数据就是代码一部分。
+做 Online Judge 题目时，你是否也在反复做这些事？
+
+- 复制粘贴测试数据到 stdin
+- 手动维护 `input.txt` / `output.txt`
+- 每次改完代码再跑一遍，逐个核对输出
+
+CodeCheck 让测试数据直接写在源代码注释里，一键编译 + 验证，零额外文件。
+
+## 为什么用 CodeCheck？
+
+| 方式 | 操作步骤 | 数据管理 |
+|------|---------|---------|
+| 手动复制粘贴 | 每次运行都复制 | 分散，容易丢 |
+| input.txt 重定向 | 需额外维护文件 | 数据和代码分离 |
+| **CodeCheck** | **一条命令** | **数据就在代码里** |
 
 ## Quick Start
 
@@ -144,28 +160,6 @@ python codecheck.py -a hello.c
 // @input: slow_test timeout=5
 ```
 
-## 命令行选项
-
-```
-Usage: python codecheck.py [options] <source-file>
-
-  -h, --help     显示帮助信息
-  -c, --check    验证嵌入式单元测试的输出
-  -d, --debug    调试模式运行（不比对输出）
-  -a, --args     使用 @args 指定的命令行参数运行
-  -{num}         选择指定测试用例（1-based，配合 -c/-d 使用）
-```
-
-示例：
-
-```bash
-python codecheck.py hello.c            # 编译并运行
-python codecheck.py -c hello.c         # 验证所有测试
-python codecheck.py -c -1 hello.c      # 只验证第1个测试
-python codecheck.py -d -2 hello.c      # 调试第2个测试
-python codecheck.py -a hello.c         # 用 @args 运行
-```
-
 ## 支持的语言
 
 | 语言 | 扩展名 | 处理方式 | 注释格式 |
@@ -174,36 +168,19 @@ python codecheck.py -a hello.c         # 用 @args 运行
 | C++ | `.cpp`, `.cc`, `.cxx` | 编译后运行 | `//` 和 `/* */` |
 | Python | `.py`, `.pyw` | 直接运行 | `#` 和 `"""` |
 
-## 配置文件
+## IDE 集成
 
-配置文件路径：`~/.config/codecheck.ini`
+### Dev-C++ 一键运行
 
-```ini
-[default]
-cc = /usr/bin/gcc          # C/C++ 编译器路径
-python = /usr/bin/python3  # Python 解释器路径
-flags = -O2 -g -Wall       # 默认编译选项
-cflags = ...               # C 专用编译选项
-cxxflags = ...             # C++ 专用编译选项
-ldflags = ...              # 链接选项
-timeout = 10               # 默认超时时间（秒）
-```
+1. 打开 Dev-C++，菜单 **工具 → 配置工具**
+2. 添加一个新工具：
+   - **标题**：CodeCheck 验证
+   - **程序**：`python`（或 `python3`）
+   - **参数**：`codecheck.py -c "$(FILENAME)"`
+   - **工作目录**：`$(DIRECTORY)`
+3. 保存后即可在 Dev-C++ 中一键运行验证
 
-如果不指定 `flags`，编译时默认使用 `-O2 -g -Wall -lm`。
-
-编译时会自动定义宏 `_CODECHECK=1`，可用于区分本地调试和正式提交：
-
-```c
-#ifdef _CODECHECK
-    // 本地调试专用代码
-#endif
-```
-
-## 注释提取细节
-
-- C/C++：正确识别 `//` 单行注释和 `/* */` 多行注释，忽略字符串内的注释符号
-- Python：正确识别 `#` 注释，忽略字符串（包括三引号字符串、raw string、f-string、byte string）内的 `#` 符号
-- 测试数据必须连续排列在指令后面，中间如果有其他注释或代码行则会中断数据收集
+> 提示：将 `codecheck.py` 放到 PATH 环境变量中，或填写完整路径。
 
 ## 完整示例
 
@@ -259,6 +236,49 @@ print(a + b)
 */
 ```
 
+## 命令行选项
+
+```
+Usage: python codecheck.py [options] <source-file>
+
+  -h, --help     显示帮助信息
+  -c, --check    验证嵌入式单元测试的输出
+  -d, --debug    调试模式运行（不比对输出）
+  -a, --args     使用 @args 指定的命令行参数运行
+  -{num}         选择指定测试用例（1-based，配合 -c/-d 使用）
+```
+
+## 注释提取细节
+
+- C/C++：正确识别 `//` 单行注释和 `/* */` 多行注释，忽略字符串内的注释符号
+- Python：正确识别 `#` 注释，忽略字符串（包括三引号字符串、raw string、f-string、byte string）内的 `#` 符号
+- 测试数据必须连续排列在指令后面，中间如果有其他注释或代码行则会中断数据收集
+
+## 配置文件
+
+配置文件路径：`~/.config/codecheck.ini`
+
+```ini
+[default]
+cc = /usr/bin/gcc          # C/C++ 编译器路径
+python = /usr/bin/python3  # Python 解释器路径
+flags = -O2 -g -Wall       # 默认编译选项
+cflags = ...               # C 专用编译选项
+cxxflags = ...             # C++ 专用编译选项
+ldflags = ...              # 链接选项
+timeout = 10               # 默认超时时间（秒）
+```
+
+如果不指定 `flags`，编译时默认使用 `-O2 -g -Wall -lm`。
+
+编译时会自动定义宏 `_CODECHECK=1`，可用于区分本地调试和正式提交：
+
+```c
+#ifdef _CODECHECK
+    // 本地调试专用代码
+#endif
+```
+
 ## 许可证
 
-MIT License
+[MIT License](LICENSE) © skywind3000
